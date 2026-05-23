@@ -1,7 +1,7 @@
 ---
 name: chuangyeban-stock-pick
 description: "创业板短线选股分析 — 综合热点赛道、主力资金流向、游资/散户资金结构分析，推荐适合短期操作的创业板股票并输出标准化报告"
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 tags: [创业板, stock-pick, short-term-trading, capital-flow, a-share]
 category: research
@@ -21,31 +21,6 @@ related_skills: [a-share-research]
 - 用户要求基于当前市场热点推荐标的
 - 用户需要创业板（300开头）标的推荐
 - 用户需要格式化股票分析报告
-
-## 自动数据库更新（每次使用技能时先执行）
-
-**这是使用本技能的第一步（Step 0），在任何推荐工作之前必须执行！**
-
-每次加载本技能时，立即运行以下脚本，自动更新数据库中所有未更新的推荐记录的当前股价和涨幅：
-
-```bash
-python3 /root/.hermes/scripts/stock_db.py auto-update
-```
-
-此命令会：
-1. 查询数据库中所有 `current_price IS NULL` 或 `current_date != 今日` 的记录
-2. 通过web_search自动搜索每支股票的最新股价
-3. 计算 `change_pct = (current_price - recommend_price) / recommend_price * 100`
-4. 将 `current_date`、`current_price`、`change_pct` 三个字段写入数据库
-5. 展示更新前后的对比
-
-### 更新后展示结果
-
-执行完 `auto-update` 后，展示更新结果：
-
-```bash
-python3 /root/.hermes/scripts/stock_db.py list
-```
 
 ## Workflow
 
@@ -192,22 +167,33 @@ python3 /root/.hermes/scripts/stock_db.py list
 > ⚠️ **免责声明**：基于公开信息整理，不构成投资建议
 ```
 
-## Pitfalls
+---
 
-1. **创业板代码识别**：必须以300开头才是创业板（002开头=中小板，688开头=科创板）
-2. **数据时效性**：资金流向数据为T日数据，盘后约1-2小时更新，短线操作需关注次日的资金变化
-3. **资金流向≠股价方向**：主力资金净流入不代表次日必涨，需结合技术面判断
-4. **高价股流动性风险**：股价>500元的创业板个股，散户参与度低，短线波动可能较大
-5. **同花顺/东方财富页面可能被屏蔽**：部分金融数据页面需要L2权限才能查看完整资金流向
-6. **21经济网等财经媒体有付费墙**：部分深度报告需要付费阅读，优先用搜索获取摘要
-7. **主力资金大幅流出是危险信号**：单周主力净流出>20亿元应高度警惕（如光模块板块已出现大规模出货）
-8. **港股通调入事件**：股票调入港股通后通常有增量资金，是短线重要催化剂
+### Step 8: 录入数据库
+
+推荐报告输出完成后，将当日推荐的三支股票录入数据库：
+
+```bash
+python3 /root/.hermes/scripts/stock_db.py add 300476 胜宏科技 2026-05-22 375.50
+python3 /root/.hermes/scripts/stock_db.py add 300274 阳光电源 2026-05-22 152.95
+python3 /root/.hermes/scripts/stock_db.py add 300124 汇川技术 2026-05-22 85.00
+```
+
+### Step 9: 输出数据库查询结果
+
+录入完成后，展示数据库最新内容给用户：
+
+```bash
+python3 /root/.hermes/scripts/stock_db.py list
+```
+
+---
 
 ## 数据库存储
 
-每次推荐完成后，必须将推荐记录存入数据库 `/root/.hermes/stock_recommendations.db`。
+数据库路径：`/root/.hermes/stock_recommendations.db`
 
-### 数据库表结构
+### 表结构
 
 ```sql
 CREATE TABLE stock_recommendations (
@@ -251,40 +237,44 @@ ID   代码      名称       推荐日       推荐价     当前日期    当�
 1    300476  胜宏科技    2026-05-22  375.50    待更新      待更新   待更新   ⏳待更
 ```
 
-### 推荐后立即执行
+### 再次调用本技能时 — 更新已有推荐记录的股价
+
+当用户再次调用本技能（非首次推荐，而是查询/更新之前推荐的股票表现时），执行以下流程更新数据库中已有记录的当前股价和涨幅：
 
 ```bash
-# 录入当日推荐的三支股票
-python3 /root/.hermes/scripts/stock_db.py add <代码> <名称> <日期> <推荐价>
+# 列出待更新记录 + 生成搜索词
+python3 /root/.hermes/scripts/stock_db.py auto-update
 
-# 示例：
-python3 /root/.hermes/scripts/stock_db.py add 300476 胜宏科技 2026-05-22 375.50
+# 搜索到最新股价后，批量写入
+python3 /root/.hermes/scripts/stock_db.py auto-update 300476:388.50 300274:160.20 300124:82.60
 ```
 
-### 后续更新股价
-
-后续交易日使用以下命令更新当前价并自动计算涨幅：
+更新完成后，展示最新数据：
 
 ```bash
-# 交互式更新所有待更新记录
-python3 /root/.hermes/scripts/stock_db.py update
-
-# 或直接指定某支股票
-python3 /root/.hermes/scripts/stock_db.py update 300476 388.00
-```
-
-### 常用查询
-
-```bash
-# 列出所有推荐记录
 python3 /root/.hermes/scripts/stock_db.py list
+```
 
-# 仅查看今日推荐
-python3 /root/.hermes/scripts/stock_db.py list --today
+### 管理命令
+
+```bash
+# 交互式更新某支股价
+python3 /root/.hermes/scripts/stock_db.py update
 
 # 查看汇总统计（成功率、平均涨幅等）
 python3 /root/.hermes/scripts/stock_db.py summary
 ```
+
+## Pitfalls
+
+1. **创业板代码识别**：必须以300开头才是创业板（002开头=中小板，688开头=科创板）
+2. **数据时效性**：资金流向数据为T日数据，盘后约1-2小时更新，短线操作需关注次日的资金变化
+3. **资金流向≠股价方向**：主力资金净流入不代表次日必涨，需结合技术面判断
+4. **高价股流动性风险**：股价>500元的创业板个股，散户参与度低，短线波动可能较大
+5. **同花顺/东方财富页面可能被屏蔽**：部分金融数据页面需要L2权限才能查看完整资金流向
+6. **21经济网等财经媒体有付费墙**：部分深度报告需要付费阅读，优先用搜索获取摘要
+7. **主力资金大幅流出是危险信号**：单周主力净流出>20亿元应高度警惕（如光模块板块已出现大规模出货）
+8. **港股通调入事件**：股票调入港股通后通常有增量资金，是短线重要催化剂
 
 ## Verification
 
@@ -298,6 +288,7 @@ python3 /root/.hermes/scripts/stock_db.py summary
 - [ ] 报告格式统一，推荐一/二/三的**表头、字段、段落结构完全一致**（关键交易数据=完整版，资金结构分析=精简表+定性，推荐理由=五维度表，风险提示=列表）
 - [ ] 横向对比表和策略建议已完成
 - [ ] 推荐记录已录入数据库（`python3 stock_db.py add ...`）
+- [ ] 已输出数据库查询结果（`python3 stock_db.py list`）
 
 ## Reference Files
 
