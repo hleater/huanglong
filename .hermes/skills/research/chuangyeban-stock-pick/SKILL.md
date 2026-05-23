@@ -5,6 +5,9 @@ version: 1.1.0
 author: Hermes Agent
 tags: [创业板, stock-pick, short-term-trading, capital-flow, a-share]
 category: research
+on_demand_only: true
+cronjob_allowed: true
+related_skills: [a-share-research]
 ---
 
 # 创业板短线选股分析
@@ -264,9 +267,14 @@ python3 /root/.hermes/scripts/stock_db.py summary
 - [ ] 推荐理由覆盖全部5个维度（风口、业绩、资金、催化剂、研报）
 - [ ] 每支股票都有明确的风险提示
 - [ ] 免责声明已包含
-6. 报告格式统一，推荐一/二/三的**表头、字段、段落结构完全一致**（关键交易数据=完整版，资金结构分析=精简表+定性，推荐理由=五维度表，风险提示=列表）
-7. 免责声明已包含
-8. 横向对比表和策略建议已完成
+- [ ] 报告格式统一，推荐一/二/三的**表头、字段、段落结构完全一致**（关键交易数据=完整版，资金结构分析=精简表+定性，推荐理由=五维度表，风险提示=列表）
+- [ ] 横向对比表和策略建议已完成
+- [ ] 推荐记录已录入数据库（`python3 stock_db.py add ...`）
+
+## Reference Files
+
+- `references/database-system.md` — 完整的数据库表结构、脚本命令速查、auto-update工作流说明
+
 ## Related Skills
 
 - `a-share-research` — A股综合研究（基本面、财务数据、牛散追踪）
