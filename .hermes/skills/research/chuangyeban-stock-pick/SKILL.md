@@ -19,6 +19,31 @@ category: research
 - 用户需要创业板（300开头）标的推荐
 - 用户需要格式化股票分析报告
 
+## 自动数据库更新（每次使用技能时先执行）
+
+**这是使用本技能的第一步（Step 0），在任何推荐工作之前必须执行！**
+
+每次加载本技能时，立即运行以下脚本，自动更新数据库中所有未更新的推荐记录的当前股价和涨幅：
+
+```bash
+python3 /root/.hermes/scripts/stock_db.py auto-update
+```
+
+此命令会：
+1. 查询数据库中所有 `current_price IS NULL` 或 `current_date != 今日` 的记录
+2. 通过web_search自动搜索每支股票的最新股价
+3. 计算 `change_pct = (current_price - recommend_price) / recommend_price * 100`
+4. 将 `current_date`、`current_price`、`change_pct` 三个字段写入数据库
+5. 展示更新前后的对比
+
+### 更新后展示结果
+
+执行完 `auto-update` 后，展示更新结果：
+
+```bash
+python3 /root/.hermes/scripts/stock_db.py list
+```
+
 ## Workflow
 
 ### Step 1: 梳理当前A股市场热点赛道
