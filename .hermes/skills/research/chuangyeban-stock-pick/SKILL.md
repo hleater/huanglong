@@ -1,7 +1,7 @@
 ---
 name: chuangyeban-stock-pick
 description: "创业板短线选股分析 — 综合热点赛道、主力资金流向、游资/散户资金结构分析，推荐适合短期操作的创业板股票并输出标准化报告"
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 tags: [创业板, stock-pick, short-term-trading, capital-flow, a-share]
 category: research
