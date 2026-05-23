@@ -97,15 +97,12 @@ category: research
 | **🏛️ 催化剂** | 近期事件驱动（调入指数、政策利好、新产品等） |
 | **📊 研报** | 机构观点、目标价、评级 |
 
-### Step 6: 输出标准化报告
+### Step 6: 输出标准化报告（格式统一规则 ⚠️ 关键）
 
-按以下格式输出完整的推荐报告：
+**三支推荐的输出格式必须完全一致**，不能出现推荐一、推荐二格式不同。每一支推荐都使用完全相同的段落结构和表头。具体规定如下：
 
+**① 关键交易数据** — 使用完整格式（包含总流入/总流出）：
 ```
-## ⭐ 推荐[N]：[股票名称]（[代码]）— [一句话标签]
-
-### 📊 关键交易数据
-
 | 指标 | 数值 |
 |:---|:----:|
 | **股价** | **XXX元** 📈 |
@@ -114,19 +111,21 @@ category: research
 | **总资金流入** | XX亿元 |
 | **总资金流出** | XX亿元 |
 | **资金净流入** | **+XX亿元** 🔥 |
+```
 
-### 💰 资金结构分析
-
+**② 资金结构分析** — 使用精简表（仅净额+占比估算，带定性判断）：
+```
 | 资金类型 | 净额 | 占比估算 |
 |:-------:|:---:|:--------:|
 | **主力（特大单）** | **+XX亿元** 🟢 | **~XX%** |
 | **游资（大单）** | +/-XX亿元 | **~XX%** |
 | **散户（中小单）** | +/-XX亿元 | **~XX%** |
 
-> 📌 **定性**：[主力主导型/游资博弈型/散户接盘型] — [详细分析一句话]
+> 📌 **定性**：[主力主导型/游资博弈型/散户接盘型] — [分析一句话]
+```
 
-### 🎯 推荐理由
-
+**③ 推荐理由** — 使用五维度表（风口/业绩/资金/催化剂/研报）：
+```
 | 维度 | 分析 |
 |:---:|------|
 | **🔥 风口** | ... |
@@ -134,8 +133,12 @@ category: research
 | **💰 资金** | ... |
 | **🏛️ 催化剂** | ... |
 | **📊 研报** | ... |
+```
 
+**④ 风险提示** — 统一使用无序列表（每支股票必须至少2条）：
+```
 ### ⚠️ 风险提示
+- ...
 - ...
 ```
 
@@ -172,6 +175,61 @@ category: research
 7. **主力资金大幅流出是危险信号**：单周主力净流出>20亿元应高度警惕（如光模块板块已出现大规模出货）
 8. **港股通调入事件**：股票调入港股通后通常有增量资金，是短线重要催化剂
 
+## 数据库存储
+
+每次推荐完成后，必须将推荐记录存入数据库 `/root/.hermes/stock_recommendations.db`。
+
+### 数据库表结构
+
+```sql
+CREATE TABLE stock_recommendations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    stock_code TEXT NOT NULL,       -- 股票代码
+    stock_name TEXT NOT NULL,       -- 股票名称
+    recommend_date TEXT NOT NULL,   -- 推荐日 (YYYY-MM-DD)
+    recommend_price REAL NOT NULL,  -- 推荐日股价
+    current_date TEXT,              -- 当前日期
+    current_price REAL,             -- 当前股价
+    change_pct REAL,                -- 涨幅 (%)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 推荐后立即执行
+
+```bash
+# 录入当日推荐的三支股票
+python3 /root/.hermes/scripts/stock_db.py add <代码> <名称> <日期> <推荐价>
+
+# 示例：
+python3 /root/.hermes/scripts/stock_db.py add 300476 胜宏科技 2026-05-22 375.50
+```
+
+### 后续更新股价
+
+后续交易日使用以下命令更新当前价并自动计算涨幅：
+
+```bash
+# 交互式更新所有待更新记录
+python3 /root/.hermes/scripts/stock_db.py update
+
+# 或直接指定某支股票
+python3 /root/.hermes/scripts/stock_db.py update 300476 388.00
+```
+
+### 常用查询
+
+```bash
+# 列出所有推荐记录
+python3 /root/.hermes/scripts/stock_db.py list
+
+# 仅查看今日推荐
+python3 /root/.hermes/scripts/stock_db.py list --today
+
+# 查看汇总统计（成功率、平均涨幅等）
+python3 /root/.hermes/scripts/stock_db.py summary
+```
+
 ## Verification
 
 提交前检查：
@@ -181,8 +239,9 @@ category: research
 - [ ] 推荐理由覆盖全部5个维度（风口、业绩、资金、催化剂、研报）
 - [ ] 每支股票都有明确的风险提示
 - [ ] 免责声明已包含
-- [ ] 报告格式统一，推荐一/二/三格式一致
-
+6. 报告格式统一，推荐一/二/三的**表头、字段、段落结构完全一致**（关键交易数据=完整版，资金结构分析=精简表+定性，推荐理由=五维度表，风险提示=列表）
+7. 免责声明已包含
+8. 横向对比表和策略建议已完成
 ## Related Skills
 
 - `a-share-research` — A股综合研究（基本面、财务数据、牛散追踪）
