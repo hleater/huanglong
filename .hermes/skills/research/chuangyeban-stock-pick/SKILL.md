@@ -216,11 +216,39 @@ CREATE TABLE stock_recommendations (
     stock_name TEXT NOT NULL,       -- 股票名称
     recommend_date TEXT NOT NULL,   -- 推荐日 (YYYY-MM-DD)
     recommend_price REAL NOT NULL,  -- 推荐日股价
-    current_date TEXT,              -- 当前日期
+    current_date TEXT,              -- 当前日期 ✅ (YYYY-MM-DD)
     current_price REAL,             -- 当前股价
     change_pct REAL,                -- 涨幅 (%)
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
+
+### 字段说明
+
+| 字段名 | 中文名 | 说明 |
+|:------|:------|:----|
+| `recommend_date` | **推荐日** | 你推荐这支股票的日期 |
+| `recommend_price` | **推荐价** | 推荐当日的收盘价 |
+| `current_date` | **当前日期** | 最新更新股价时的日期 ✅ 已存在 |
+| `current_price` | **当前价** | 最新更新时的股价 |
+| `change_pct` | **涨幅** | `(当前价 - 推荐价) / 推荐价 × 100%` |
+
+### 查询结果展示规则
+
+`list` 和 `summary` 命令的输出以**表格形式**展示，涨幅字段颜色规则：
+
+| 涨幅范围 | 颜色 | 含义 |
+|:-------:|:----:|:----:|
+| > 0 | 🔴 **红色** | 上涨盈利 |
+| < 0 | 🟢 **绿色** | 下跌亏损 |
+| = 0 | ⚫ 默认色 | 持平 |
+| 待更新 | ⚪ 文字"待更新" | 还未填入当前价 |
+
+示例输出格式：
+```
+ID   代码      名称       推荐日       推荐价     当前日期    当前价    涨幅    状态
+================================================================================
+1    300476  胜宏科技    2026-05-22  375.50    待更新      待更新   待更新   ⏳待更
 ```
 
 ### 推荐后立即执行
