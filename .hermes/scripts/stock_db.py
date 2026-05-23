@@ -76,12 +76,25 @@ def list_records(today_only=False):
         conn.close()
         return
     
-    header = f"{'ID':<4} {'代码':<8} {'名称':<10} {'推荐日':<12} {'推荐价':<10} {'当前日':<12} {'当前价':<10} {'涨幅':<8}  {'状态':<6}"
+    header = f"{'ID':<4} {'代码':<8} {'名称':<10} {'推荐日':<12} {'推荐价':<10} {'当前日期':<12} {'当前价':<10} {'涨幅':<8}  {'状态':<6}"
     print(f"\n{header}")
     print("="*88)
     for r in rows:
         change = r['change_pct']
-        change_str = f"{change:+.2f}%" if change is not None else "待更新"
+        # 涨幅颜色：红色(正) 绿色(负) 黑色(零/待更新)
+        RED = '\033[91m'
+        GREEN = '\033[92m'
+        RESET = '\033[0m'
+        
+        if change is not None and change > 0:
+            change_str = f"{RED}{change:+.2f}%{RESET}"
+        elif change is not None and change < 0:
+            change_str = f"{GREEN}{change:+.2f}%{RESET}"
+        elif change is not None:
+            change_str = f"{change:+.2f}%"
+        else:
+            change_str = "待更新"
+        
         cur_price = f"{r['current_price']:.2f}" if r['current_price'] else "待更新"
         cur_date = r['current_date'] if r['current_date'] else "待更新"
         
@@ -305,6 +318,11 @@ def summary():
     ''')
     worst = cursor.fetchone()
     
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RESET = '\033[0m'
+    
     print("\n" + "="*50)
     print("📊 股票推荐数据库统计")
     print("="*50)
@@ -314,11 +332,14 @@ def summary():
         print(f"  ✅ 上涨: {positive} | ❌ 下跌: {negative} | 🟰 零: {updated - positive - negative}")
         win_rate = round(positive / updated * 100, 1) if updated > 0 else 0
         print(f"  📈 胜率: {win_rate}%")
-        print(f"  📉 平均涨幅: {avg_return:+.2f}%")
+        avg_str = f"{RED}{avg_return:+.2f}%{RESET}" if avg_return > 0 else f"{GREEN}{avg_return:+.2f}%{RESET}" if avg_return < 0 else f"{avg_return:+.2f}%"
+        print(f"  📉 平均涨幅: {avg_str}")
     if best:
-        print(f"  🏆 最佳: {best['stock_name']}({best['stock_code']}) {best['change_pct']:+.2f}%")
+        best_str = f"{RED}{best['change_pct']:+.2f}%{RESET}" if best['change_pct'] > 0 else f"{best['change_pct']:+.2f}%"
+        print(f"  🏆 最佳: {best['stock_name']}({best['stock_code']}) {best_str}")
     if worst:
-        print(f"  💀 最差: {worst['stock_name']}({worst['stock_code']}) {worst['change_pct']:+.2f}%")
+        worst_str = f"{GREEN}{worst['change_pct']:+.2f}%{RESET}" if worst['change_pct'] < 0 else f"{worst['change_pct']:+.2f}%"
+        print(f"  💀 最差: {worst['stock_name']}({worst['stock_code']}) {worst_str}")
     print("="*50)
     
     # 按推荐日分组统计
@@ -334,7 +355,16 @@ def summary():
     print(f"{'推荐日':<12} {'数量':<6} {'平均涨幅':<10}")
     print("-"*30)
     for r in rows:
-        avg = f"{r['avg_chg']:+.2f}%" if r['avg_chg'] else "待更新"
+        avg_val = r['avg_chg']
+        if avg_val is not None:
+            if avg_val > 0:
+                avg = f"{RED}{avg_val:+.2f}%{RESET}"
+            elif avg_val < 0:
+                avg = f"{GREEN}{avg_val:+.2f}%{RESET}"
+            else:
+                avg = f"{avg_val:+.2f}%"
+        else:
+            avg = "待更新"
         print(f"{r['recommend_date']:<12} {r['cnt']:<6} {avg:<10}")
     
     conn.close()
